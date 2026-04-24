@@ -17,7 +17,8 @@
       "PowerShell(Get-Process | Where-Object { $_.Name -match 'cmd|ogcode' } | Sort-Object StartTime -Descending | Select-Object Id, Name, StartTime | Format-Table)",
       "Bash(python make_all_figures.py)",
       "Bash(pdflatex --version)",
-      "Bash(latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex)"
+      "Bash(latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex)",
+      "Bash(git add *)"
     ]
   }
 }
