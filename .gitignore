@@ -1,6 +1,16 @@
 # =============================================================
-# LaTeX build artefacts (Thesis_writeup/, anywhere)
+# Data, results, and notes (txt) — not part of the public repo.
+# Build-config CMakeLists.txt is re-included via the negation below.
 # =============================================================
+*.txt
+!CMakeLists.txt
+
+# =============================================================
+# LaTeX writeup folder — kept private while still drafting.
+# =============================================================
+Thesis_writeup/
+*.tex
+*.bib
 *.aux
 *.bbl
 *.blg
@@ -20,9 +30,6 @@
 *.idx
 *.ilg
 *.ind
-
-# The compiled PDF — comment out the next line if you do want to track it.
-Thesis_writeup/main.pdf
 
 # =============================================================
 # Windows batch files (run scripts, build scripts)

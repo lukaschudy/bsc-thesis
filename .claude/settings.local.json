@@ -18,7 +18,9 @@
       "Bash(python make_all_figures.py)",
       "Bash(pdflatex --version)",
       "Bash(latexmk -pdf -interaction=nonstopmode -halt-on-error main.tex)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)"
     ]
   }
 }
