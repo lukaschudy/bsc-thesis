@@ -1,0 +1,245 @@
+\documentclass[12pt,a4paper]{report}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%-----------------------PAGE SETTINGS----------------------------%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{setspace}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%--------------------------PREAMBLE------------------------------%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Graphics and figures
+\usepackage{graphicx}
+\usepackage{pdfpages}
+\usepackage{anyfontsize}
+\usepackage{float}
+\usepackage{subcaption}
+
+% Math packages
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+
+% Tables
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+
+% Bibliography
+\usepackage[style=authoryear,backend=biber]{biblatex}
+\addbibresource{references.bib}
+
+% Hyperlinks
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+    citecolor=blue,
+    pdftitle={Thesis Title},
+    pdfauthor={Lukas Chudy},
+}
+
+% Code listings (optional)
+\usepackage{listings}
+\usepackage{xcolor}
+
+% Algorithms (optional)
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+% Header and footer
+\usepackage{fancyhdr}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[R]{\thepage}
+\fancyhead[L]{\leftmark}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% Line spacing
+\onehalfspacing
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%-----------------------CUSTOM COMMANDS--------------------------%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\textBF}[1]{%
+    \pdfliteral direct {2 Tr 1 w} %the second factor is the boldness
+     #1%
+    \pdfliteral direct {0 Tr 0 w}%
+}
+
+\newcommand{\textDF}[1]{%
+    \pdfliteral direct {2 Tr 0.2 w} %the second factor is the boldness
+     #1%
+    \pdfliteral direct {0 Tr 0 w}%
+}
+
+% Theorem environments
+\theoremstyle{definition}
+\newtheorem{definition}{Definition}[chapter]
+\newtheorem{theorem}{Theorem}[chapter]
+\newtheorem{lemma}{Lemma}[chapter]
+\newtheorem{corollary}{Corollary}[chapter]
+\newtheorem{proposition}{Proposition}[chapter]
+\newtheorem{example}{Example}[chapter]
+\newtheorem{remark}{Remark}[chapter]
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%-----------------------DOCUMENT BEGIN---------------------------%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%-----------------------TITLE PAGE-------------------------------%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{titlepage}
+\thispagestyle{empty}
+\title{
+\includegraphics[width=16cm]{extras/logo.png} \\
+\vspace{3cm}
+\begingroup
+\setstretch{4}\fontsize{38}{10}\selectfont\fontdimen2\font=0.8ex
+\parbox{13.3cm}{\textBF{Title of thesis which may run over multiple lines}} %%Title
+\endgroup}
+\date{}
+\author{}
+\maketitle
+\vspace{-1.5cm}
+\hspace{4cm}\parbox[b][15cm][b]{8cm}{\textDF{\large\setstretch{1.5}
+Bachelor's Project Economics\\
+June 2026\\
+Student: Lukas Chudy\\ %NAME
+First supervisor: \\
+Second assessor: }}
+\end{titlepage}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%-----------------------FRONT MATTER-----------------------------%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\pagenumbering{roman}
+
+% Abstract
+\chapter*{Abstract}
+\addcontentsline{toc}{chapter}{Abstract}
+
+% Abstract content here
+\lipsum[1-2] % Remove this line and add your abstract
+
+\newpage
+
+% Acknowledgments (optional)
+\chapter*{Acknowledgments}
+\addcontentsline{toc}{chapter}{Acknowledgments}
+
+% Acknowledgments content here
+
+\newpage
+
+% Table of Contents
+\tableofcontents
+\newpage
+
+% List of Figures
+\listoffigures
+\newpage
+
+% List of Tables
+\listoftables
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%-----------------------MAIN MATTER------------------------------%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\pagenumbering{arabic}
+\setcounter{page}{1}
+
+\chapter{Introduction}
+\label{chap:introduction}
+
+\section{Background and Motivation}
+\label{sec:background}
+
+\section{Research Question}
+\label{sec:research_question}
+
+\section{Contributions}
+\label{sec:contributions}
+
+\section{Structure of the Thesis}
+\label{sec:structure}
+
+\chapter{Literature Review}
+\label{chap:literature}
+
+\section{Theoretical Framework}
+\label{sec:theoretical_framework}
+
+\section{Related Work}
+\label{sec:related_work}
+
+\section{Research Gap}
+\label{sec:research_gap}
+
+\chapter{Methodology}
+\label{chap:methodology}
+
+\section{Data}
+\label{sec:data}
+
+\section{Model Specification}
+\label{sec:model}
+
+\section{Estimation Strategy}
+\label{sec:estimation}
+
+\section{Robustness Checks}
+\label{sec:robustness}
+
+\chapter{Results}
+\label{chap:results}
+
+\section{Descriptive Statistics}
+\label{sec:descriptive}
+
+\section{Main Results}
+\label{sec:main_results}
+
+\section{Discussion}
+\label{sec:discussion}
+
+\chapter{Conclusion}
+\label{chap:conclusion}
+
+\section{Summary of Findings}
+\label{sec:summary}
+
+\section{Policy Implications}
+\label{sec:policy}
+
+\section{Limitations and Future Research}
+\label{sec:limitations}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%-----------------------BACK MATTER------------------------------%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% Bibliography
+\newpage
+\printbibliography[heading=bibintoc,title={References}]
+
+% Appendices (optional)
+\appendix
+\chapter{Additional Figures and Tables}
+\label{app:figures}
+
+\chapter{Mathematical Derivations}
+\label{app:derivations}
+
+\end{document}

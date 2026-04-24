@@ -1,0 +1,49 @@
+# =============================================================
+# LaTeX build artefacts (Thesis_writeup/, anywhere)
+# =============================================================
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.lof
+*.log
+*.lot
+*.out
+*.synctex.gz
+*.toc
+*.nav
+*.snm
+*.vrb
+*.run.xml
+*.bcf
+*.idx
+*.ilg
+*.ind
+
+# The compiled PDF — comment out the next line if you do want to track it.
+Thesis_writeup/main.pdf
+
+# =============================================================
+# Windows batch files (run scripts, build scripts)
+# =============================================================
+*.bat
+
+# =============================================================
+# Build artefacts (C++)
+# =============================================================
+*.exe
+*.o
+*.obj
+build/
+cmake-build-*/
+
+# =============================================================
+# Editor / OS clutter
+# =============================================================
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+Thumbs.db

@@ -1,0 +1,34 @@
+\section{Limitations and extensions}
+\label{sec:limitations}
+
+The findings of this paper rest on a relatively narrow experimental design --- a fixed Calvano environment, three frictions parameterised in specific ways, a single $(L,\sigma,T)$ point in the factorial. This section is honest about what the design cannot answer and what the natural extensions would look like.
+
+\subsection{Methodological limitations}
+\label{sec:lim-method}
+
+\paragraph{Bounded memory not tested.}
+The scoping argument in Section~\ref{sec:intro-scoping} establishes that a $k=2$ memory extension is computationally infeasible at the compute budget available for this thesis. The original proposal listed bounded memory as a friction, and this paper does not deliver on that. A meaningful test of bounded memory would require either access to substantial compute (a proper HPC allocation, see below) or a methodological change (function approximation rather than tabular Q-learning, which itself opens new questions about the source of any observed effect).\todo{Be explicit in the abstract / intro that bounded memory is not tested in this paper, despite the proposal mentioning it.}
+
+\paragraph{Single $(L,\sigma,T)$ point in the factorial.}
+The factorial of Section~\ref{sec:results-factorial} tests the joint effects of all three frictions at a single moderate-friction reference point ($L=2$, $\sigma=1$, $T=1$). The interaction patterns reported (latency--noise super-multiplicative compounding; async rescuing collusion in combination) are properties of \emph{this} point. They might or might not generalise. Two extensions would clarify scope.
+\begin{itemize}[topsep=2pt, itemsep=2pt]
+    \item \emph{Pairwise heatmaps.} Rather than two levels per friction, run each pair on a $4\times 4$ or $5\times 5$ grid: latency $\times$ noise, latency $\times$ async, noise $\times$ async. This maps the full \emph{shape} of the interaction surface for each pair, rather than evaluating it at one corner.
+    \item \emph{Sparse $3\times 3\times 3$ grid.} Add a middle level for each friction, giving 27 cells. This adds within-friction concavity / saturation information that the $2\times 2\times 2$ design cannot reveal.
+\end{itemize}
+Either is feasible on RUG-cluster compute (see below) and would substantially strengthen the policy-implications paragraph in Section~\ref{sec:discussion-policy}.
+
+\paragraph{No off-path deviation tests for asynchrony.}
+\citet{calvano2023} introduce off-path deviation tests as a way to distinguish ``genuine'' learnt collusion (sustained by punishment that follows simulated deviations) from ``spurious'' high prices that are equilibria of the action-selection rule rather than of the underlying game. The asynchrony results in Section~\ref{sec:results-async}, and especially the async-rescue cells \texttt{F101} and \texttt{F111}, are particularly natural candidates for these tests because the mechanism story we offer (structural commitment substituting for rival-side signal quality) makes a falsifiable prediction --- the rescue should survive simulated deviations more reliably than reactive punishment would. Implementing the tests is straightforward but was not in scope for this draft.
+
+\paragraph{Cross-session SE versus standard error of the mean.}
+The \texttt{sePrGain} column reported by the simulator's \texttt{A\_convResults.txt} is the cross-session standard deviation of session-level $\Delta$ values, not the standard error of the mean. The two differ by a factor of $\sqrt{N}$, with the SE of the mean being substantially smaller --- approximately $0.004$ on the headline factorial cells at $N=1000$. The text uses ``SD'' for the cross-session standard deviation throughout to avoid this ambiguity, but readers familiar with Calvano-style work should be aware of the convention.
+
+\subsection{Computational limitations}
+\label{sec:lim-compute}
+
+The single-friction sweeps and the $N=250$ factorial run on a single workstation in time scales of a few hours each. The $N=1000$ factorial takes roughly an overnight run. Larger experiments --- a full $5\times 5$ pairwise heatmap, the $3\times 3\times 3$ grid, $\nu$-corrected grid robustness, longer-memory variants, off-path deviation analysis on top of the existing factorial cells --- saturate or exceed local-machine compute. Running them at scale would require access to the University of Groningen H\'abr\'ok compute cluster.\todo{Specifically request HPC time once the supervisor agrees on which extensions are highest priority.} The C++ code already uses OpenMP parallelism over sessions, which is the natural HPC parallelism axis, so porting the experiments to a SLURM script is a small task.
+
+\subsection{Replication and reproducibility}
+\label{sec:lim-replication}
+
+Every figure and table in this paper is generated from a small number of plain-text result files (\texttt{A\_convResults.txt} per cell) by a single Python script (\texttt{Thesis\_writeup/figures/make\_all\_figures.py}). All of the simulator's input parameters are stored in version-controlled \texttt{A\_*.txt} files, one per experiment cell. Reproduction therefore amounts to (i) compiling the C++ simulator, (ii) running the appropriate batch script in each experiment folder, (iii) running the Python figure-generation script. The full repository is at \repolink.\todo{Make the GitHub repo public before submission. Also add a top-level README that walks through the reproduction steps.}

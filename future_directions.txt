@@ -1,0 +1,102 @@
+FUTURE DIRECTIONS / ALTERNATIVE DESIGN CHOICES
+================================================
+Things we considered but did not implement in the initial version. Kept here
+so they are not forgotten and can be revisited later or discussed with supervisor.
+
+
+FRICTION 2 — NOISY MONITORING
+------------------------------
+(1) Discrete-flip noise model (alternative to Gaussian)
+    Instead of ε ~ N(0, σ²) added to the price index, each period with
+    probability p the agent observes a uniformly random price from the grid;
+    with probability 1−p it observes the true opponent price.
+    - Single parameter p ∈ [0,1] instead of σ
+    - Sharper interpretation: "p fraction of observations are garbage"
+    - Qualitatively similar but has no locality (a noisy observation could
+      land anywhere on the grid, not just near the true value).
+    - Worth running as robustness check if the main Gaussian results are
+      compelling.
+
+(2) Asymmetric noise (discuss with supervisor)
+    Non-zero-mean noise ε ~ N(μ, σ²) with μ ≠ 0.
+    - Models systematic bias in observation (e.g. agent consistently
+      under/over-estimates opponent's price).
+    - Could test whether biased perception helps or hurts collusion.
+    - Not standard in the literature — would need motivation.
+
+(3) One-sided noise (only one agent is noisy)
+    Only agent 1 sees a noisy signal; agent 2 observes the true price.
+    - Tests information asymmetry: does the "informed" agent exploit the
+      "uninformed" one, or does collusion survive anyway?
+    - Different research question — less about friction-as-policy and more
+      about information economics.
+
+
+FRICTION 4 (FROM SUPERVISOR) — QUANTIZED OBSERVATION
+-----------------------------------------------------
+Mentioned in supervisor feedback: "I can set prices by epsilon but he only
+sees m". Interpretation: agents choose prices from a fine grid (say 100
+bins) but observe opponent only at coarse resolution (say 15 bins — each
+observed bin aggregates ~7 true prices).
+- Separates action resolution from observation resolution.
+- Different mechanism from latency (timing) or noise (corruption) —
+  this is information *resolution*.
+- Implementation would need two grids and a projection map.
+- Deferred until after the three originally planned frictions are complete.
+
+
+FRICTION 3 — ASYNCHRONOUS (ALTERNATIVE INTERPRETATION NOT CHOSEN)
+------------------------------------------------------------------
+Interpretation B: Asynchronous LEARNING (updating at different rates).
+Both agents act simultaneously each period, but Q-table updates are
+staggered:
+  (B1) each agent updates with probability p < 1 per period, OR
+  (B2) agent 1 updates every period, agent 2 every k periods.
+
+- Economic motivation: firms have different learning capacities /
+  reaction speeds (incumbent vs entrant, resourced vs not).
+- Policy interpretation: weak. Slow-learning is not a regulatory lever
+  in any realistic sense.
+- Expected effect: slow-updating agent can't coordinate as quickly,
+  plausibly breaks collusion — but more a mechanism stress-test than a
+  policy study.
+
+Kept here as a potential follow-on experiment. Chosen interpretation for
+friction 3 is A (asynchronous actions / alternating moves) — see
+design_choices.txt.
+
+
+COMBINED-FRICTIONS: FOLLOW-ON EXPERIMENTS
+------------------------------------------
+The 2x2x2 factorial design (Option A) is the minimum experiment to
+answer "do frictions multiply or add?" at a single reference point.
+If the factorial shows interesting (non-multiplicative, non-additive)
+interactions, the next two steps in increasing ambition are:
+
+OPTION B — Pairwise 2D heatmaps
+  Scan each pair of frictions on a 4x4 or 5x5 grid:
+    - Latency x Noise      (~16-25 cells)
+    - Latency x Async      (~16-25 cells)
+    - Noise x Async        (~16-25 cells)
+  Render each pair as a heatmap of Delta. Reveals the SHAPE of the
+  interaction (e.g. does latency make noise more effective for moderate
+  values but saturate at high values?).
+  Compute: ~3 * 20 * 250 sessions ~= 15,000 sessions.
+  Visualisation: three heatmaps in a row. Good for thesis figure.
+
+OPTION C — Full 3D sparse grid
+  E.g. L in {0, 1, 5}, sigma in {0, 1, 3}, T in {0, 1, 5} -> 27 cells.
+  Most informative but harder to visualise (stack of heatmaps or
+  isosurface-style plot). Probably overkill unless Options A/B surface
+  something weird enough to need the full mapping.
+  Compute: ~27 * 250 = 6,750 sessions.
+  Visualisation: three slice plots (one per T level).
+
+Running any of these is strong candidate for the RUG cluster.
+
+
+OTHER POTENTIAL EXTENSIONS
+---------------------------
+- Higher-memory agents (k > 1): state includes more than one lag
+- Three or more firms (n > 2): does collusion survive larger markets?
+- Heterogeneous frictions: one agent has latency, the other has noise
