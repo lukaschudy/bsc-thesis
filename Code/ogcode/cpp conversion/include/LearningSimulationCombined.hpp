@@ -26,6 +26,7 @@ void computeExperimentCombined(
     double delta,
     int latency,
     double sigma,
-    int lockIn);
+    int lockIn,
+    int playbackPeriods = 30);
 
 }  // namespace LearningSimulationCombined

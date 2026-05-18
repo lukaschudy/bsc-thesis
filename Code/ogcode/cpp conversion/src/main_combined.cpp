@@ -76,13 +76,15 @@ double read_double_or_default(const std::string& filename, double dflt, const ch
 int main() {
     using namespace globals;
 
-    const int    latency = read_int_or_default("A_Latency.txt",  0,   "Latency L");
-    const double sigma   = read_double_or_default("A_NoiseStd.txt", 0.0, "Noise sigma");
-    const int    lockIn  = read_int_or_default("A_LockIn.txt",   0,   "Lock-in T");
+    const int    latency        = read_int_or_default("A_Latency.txt",  0,  "Latency L");
+    const double sigma          = read_double_or_default("A_NoiseStd.txt", 0.0, "Noise sigma");
+    const int    lockIn         = read_int_or_default("A_LockIn.txt",   0,  "Lock-in T");
+    const int    playbackPeriods = read_int_or_default("A_PlaybackPeriods.txt", 30, "Playback periods");
 
     std::cout << "Combined frictions: L=" << latency
               << "  sigma=" << sigma
-              << "  T=" << lockIn << "\n";
+              << "  T=" << lockIn
+              << "  playback=" << playbackPeriods << " periods\n";
 
     runtime::io::open_unit(10001, "A_InputParameters.txt", std::ios::in);
     readBatchVariables(10001);
@@ -160,7 +162,7 @@ int main() {
 
         LearningSimulationCombined::computeExperimentCombined(
             iExperiment, codExperiment, alpha, ExplorationParameters, delta,
-            latency, sigma, lockIn);
+            latency, sigma, lockIn, playbackPeriods);
 
         ConvergenceResults::ComputeConvResults(iExperiment);
     }

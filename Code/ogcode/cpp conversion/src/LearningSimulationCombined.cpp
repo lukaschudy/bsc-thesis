@@ -85,6 +85,24 @@ int observeWithNoiseIdx(
     return obs;
 }
 
+// Static-Bertrand best response for agent 1 against agent 2's price index p2.
+// Searches over the discrete price grid for the action that maximises
+// agent 1's single-period profit, using the pre-computed PI matrix.
+int findBestResponseAgent1(int p2_idx)
+{
+    using namespace globals;
+    int best_a = 1;
+    double best_pi = -1.0e300;
+    for (int a = 1; a <= numPrices; ++a) {
+        const int act = 1 + (a - 1) * numPrices + (p2_idx - 1);
+        if (PI[act][1] > best_pi) {
+            best_pi = PI[act][1];
+            best_a  = a;
+        }
+    }
+    return best_a;
+}
+
 // Epsilon-greedy / Boltzmann action selection using per-agent states.
 // Matches the corresponding routines in the single-friction learners.
 // Advances epsilon for BOTH agents every call (calendar time advances
@@ -161,9 +179,22 @@ void computeExperimentCombined(
     double delta,
     int latency,
     double sigma,
-    int lockIn)
+    int lockIn,
+    int playbackPeriods)
 {
     using namespace globals;
+
+    // -----------------------------------------------------------------------
+    // Off-path deviation test (playback) configuration.
+    // After each session converges we run a deterministic playback in which
+    // agent 1 is forced to deviate at period 1 and both agents otherwise
+    // play greedy. Two deviation types: 0 = lowest grid price, 1 = static-
+    // Bertrand best response against agent 2's price. The playback length is
+    // configurable per cell (default 30) via A_PlaybackPeriods.txt.
+    // -----------------------------------------------------------------------
+    const int PLAYBACK_PERIODS = playbackPeriods;
+    std::ofstream playbackFile("Playback.txt", std::ios::trunc);
+    playbackFile << "session devType period p1Idx p2Idx\n";
 
     // -----------------------------------------------------------------------
     // Session-level accumulators (identical to baseline)
@@ -401,6 +432,89 @@ void computeExperimentCombined(
             }
             statePerAgent = statePrimePerAgent;
         }  // end while
+
+        // -----------------------------------------------------------------------
+        // Off-path deviation playback
+        //
+        // Both deviation types start from the same converged context (saved
+        // strategy, buffers, perceived states, noise RNG). For each type we
+        // run 30 greedy periods; at period 1 we force agent 1's action.
+        // Period 0 is the steady-state joint price recorded before the shock.
+        // -----------------------------------------------------------------------
+        {
+            const auto strategyCv         = strategyPrime;     // frozen greedy
+            const auto priceBufferCv      = priceBuffer;       // converged buffers
+            const auto statePerAgentCv    = statePerAgent;     // converged perceived states
+            const auto noiseRngCv         = noiseRng;          // RNG snapshot
+            const int  p1_steady          = priceBufferCv[1].front();
+            const int  p2_steady          = priceBufferCv[2].front();
+
+            for (int devType = 0; devType < 2; ++devType) {
+                // Restore saved state
+                auto priceBufferPlay   = priceBufferCv;
+                auto statePerAgentPlay = statePerAgentCv;
+                noiseRng               = noiseRngCv;
+
+                // Period 0 = steady state before the shock
+                playbackFile << iSession << ' ' << devType << " 0 "
+                             << p1_steady << ' ' << p2_steady << '\n';
+
+                int playIter = 0;
+                for (int playPeriod = 1; playPeriod <= PLAYBACK_PERIODS; ++playPeriod) {
+                    ++playIter;
+
+                    // Greedy actions
+                    auto pPrimePlay = runtime::make1<int>(numAgents, 0);
+                    for (int a = 1; a <= numAgents; ++a) {
+                        pPrimePlay[a] = strategyCv[statePerAgentPlay[a]][a];
+                    }
+
+                    // Override deviation at period 1
+                    if (playPeriod == 1) {
+                        if (devType == 0) {
+                            pPrimePlay[1] = 1;                      // lowest grid index
+                        } else {
+                            const int p2_true = priceBufferPlay[2].front();
+                            pPrimePlay[1] = findBestResponseAgent1(p2_true);  // BR
+                        }
+                    }
+
+                    // Async non-mover override
+                    if (lockIn >= 1) {
+                        const int movingAgent =
+                            (((playIter - 1) / lockIn) % 2) + 1;
+                        for (int a = 1; a <= numAgents; ++a) {
+                            if (a != movingAgent) {
+                                pPrimePlay[a] = priceBufferPlay[a].front();
+                            }
+                        }
+                    }
+
+                    // Log the actual joint action
+                    playbackFile << iSession << ' ' << devType << ' '
+                                 << playPeriod << ' '
+                                 << pPrimePlay[1] << ' ' << pPrimePlay[2] << '\n';
+
+                    // Advance price buffers
+                    for (int a = 1; a <= numAgents; ++a) {
+                        priceBufferPlay[a].push_front(pPrimePlay[a]);
+                        priceBufferPlay[a].pop_back();
+                    }
+
+                    // Next perceived state per agent (fresh noise, lagged obs)
+                    for (int iAgent = 1; iAgent <= numAgents; ++iAgent) {
+                        const int jAgent  = 3 - iAgent;
+                        const int ownNew  = priceBufferPlay[iAgent].front();
+                        const int oppTrue = priceBufferPlay[jAgent].back();
+                        const int oppObs  =
+                            observeWithNoiseIdx(oppTrue, sigma, noiseRng, normal01);
+                        statePerAgentPlay[iAgent] =
+                            encodeStateCombined(ownNew, oppObs, iAgent);
+                    }
+                }
+            }
+        }
+        // -----------------------------------------------------------------------
 
         // -----------------------------------------------------------------------
         // Q print-out (identical to baseline)
