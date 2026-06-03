@@ -1,0 +1,59 @@
+\section{Implementation and design choices}
+\label{app:implementation}
+
+The C++ simulator is structured around five executables sharing a common library: \texttt{ogcode\_cpp.exe} (baseline), \texttt{ogcode\_latency.exe}, \texttt{ogcode\_noise.exe}, \texttt{ogcode\_async.exe}, and \texttt{ogcode\_combined.exe} (unified). The single-friction binaries exist primarily to cross-validate the unified one. At all-zero friction inputs the unified learner reproduces the baseline bit-for-bit, the principal correctness check.
+
+The Calvano-style \texttt{Ran2} generator is preserved for exploration and $Q$-initialisation tie-breaking. Gaussian noise (Friction~2) uses an independent \texttt{std::mt19937\_64} stream seeded from the session index, at $\sigma=0$ the noise stream is short-circuited and never advanced, so the baseline is reproduced exactly when noise is off.
+
+\paragraph{Price grid construction.}
+\label{app:price-grid}
+The 15-point price grid is anchored at the two static benchmarks of the one-shot game, the symmetric Bertrand-Nash price $p^{\mathrm{N}}$ and the symmetric joint-monopoly price $p^{\mathrm{M}}$, both computed from the demand and cost parameters before any learning runs. The grid extends a fraction $\xi=0.1$ beyond each benchmark so that Nash and monopoly are interior points of the action set:
+\begin{equation}
+    p_1 = p^{\mathrm{N}} - \xi(p^{\mathrm{M}} - p^{\mathrm{N}}),\qquad p_m = p^{\mathrm{M}} + \xi(p^{\mathrm{M}} - p^{\mathrm{N}}),\qquad p_k = p_1 + \tfrac{k-1}{m-1}(p_m - p_1).
+    \label{eq:price-grid}
+\end{equation}
+For the baseline parameters this gives $p_1\approx 1.428$ and $p_{15}\approx 1.970$.
+
+\paragraph{Grid robustness.} The baseline result is not a coarse-grid artefact. With Calvano's original fixed-$\beta$ protocol, $\Delta$ falls modestly with finer grids and asymptotes by $m\sim 50$:
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{1.05}
+\begin{tabular}{rcccc}
+\toprule
+$m$ & sessions & $\Delta$ & SD & avg time-to-convergence \\
+\midrule
+15  & 1000 & 0.848 & 0.109 & 261 episodes  \\
+25  & 1000 & 0.806 & 0.076 & 364 episodes  \\
+50  & 250  & 0.707 & 0.023 & 476 episodes  \\
+100 & 250  & 0.706 & 0.016 & 1144 episodes \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+A $\nu$ corrected version (in which $\beta$ is scaled with $m$ to hold expected per-cell visit count constant per Equation~\ref{eq:nu}) is left for future work. Without it, some of the $\Delta$ decline from $m=15$ to $m=100$ may reflect worse exploration per cell rather than a genuine effect of grid resolution.
+
+\paragraph{Replication-count stability for combined-friction cells.}
+\label{app:replication-stability}
+Figure~\ref{fig:factorial-acrossN} plots the combined-friction cell means at $N\in\{250,500,1000\}$ sessions. It is a visual version of Table~\ref{tab:factorial-acrossN}. The ordering of cells and the interaction pattern are stable across replication counts; the largest movement between $N=250$ and $N=1000$ is about $0.023$ in $\Delta$.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.92\linewidth]{figures/fig_factorial_acrossN.pdf}
+\caption{Combined-friction $\Delta$ values across replication sizes. The pattern is qualitatively identical at $N\in\{250, 500, 1000\}$, with cell-level movements between consecutive $N$'s typically under $0.025$.}
+\label{fig:factorial-acrossN}
+\end{figure}
+
+\section{Why bounded memory was not extended}
+\label{app:bounded-memory}
+
+A natural extension of the Calvano baseline is to let algorithms remember more than the immediately previous period. This thesis keeps memory fixed at one period and instead studies information and timing frictions on the rival price observation. The reason is computational, and it is worth stating quantitatively because the size of the obstacle is not obvious from a casual read.
+
+Each agent's state is the joint price vector over the previous $k$ periods, so the state space has cardinality $|\mathcal{S}| = m^{nk}$ and the per-agent $Q$-table has $m^{nk+1}$ cells. The Calvano baseline uses $(n,k,m)=(2,1,15)$, giving $|\mathcal{S}|=225$ and $3{,}375$ cells per agent, which is a manageable problem. \citet[footnote to eq.~21]{calvano2020} give the expected number of visits to a sub-optimal $Q$-cell under $\varepsilon$-greedy exploration as
+\begin{equation}
+    \nu \;=\; \frac{(m-1)^{n}}{m^{kn(n+1)} \cdot \bigl(1 - e^{-\beta(n+1)}\bigr)}.
+    \label{eq:nu}
+\end{equation}
+Holding $\beta$ and the iteration budget fixed and incrementing $k$ from 1 to 2 with $n=2$, $m=15$ multiplies the denominator by $m^{n(n+1)} = 15^{6} \approx 1.14\times 10^{7}$. In plain English, doubling memory makes each $Q$-cell receive about ten million times fewer learning updates within the same compute budget. To compensate would require either a $10^{7}$-fold longer iteration budget per session (pushing session runtimes from minutes to weeks), or a correspondingly larger exploration parameter (which would destroy the late session low-$\varepsilon$ exploitation regime needed for collusion to crystallise). Neither is feasible at the available compute.
+
+The implication is that any meaningful bounded memory extension at this Calvano style tabular Q baseline would require either substantially larger compute (a proper HPC allocation), or a methodological change to function approximated $Q$ that abandons the per-cell visit count argument entirely. Both are reasonable next steps but were out of scope for this thesis. The frictions that were implemented, namely latency, noise, and asynchrony, all preserve the per-agent state cardinality at $m^{2}=225$, which is exactly why they are tractable on the same compute that runs the baseline.

@@ -5,7 +5,7 @@ Each cell folder contains Playback.txt with columns:
 
 devType is 0 for the "Low" deviation (force lowest grid index) and 1 for
 the "BR" deviation (static-Bertrand best response against agent 2's true
-price). Period 0 is the steady state pre-shock; periods 1..30 are post-
+price). Period 0 is the steady state pre-shock; periods 1..100 are post-
 shock greedy playback.
 
 This module converts indices into actual prices using the Calvano price
@@ -74,7 +74,7 @@ def load_playback(folder: pathlib.Path) -> pd.DataFrame | None:
 
 
 def mean_trajectory(df: pd.DataFrame) -> pd.DataFrame:
-    """Return a DataFrame: index = period (0..30), columns = ['Low', 'BR'],
+    """Return a DataFrame: index = period, columns = ['Low', 'BR'],
     values = mean Delta across sessions."""
     g = df.groupby(['devType', 'period'])['Delta'].mean().unstack(level=0)
     return g.rename(columns=DEV_LABELS)

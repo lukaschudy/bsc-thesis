@@ -1,8 +1,8 @@
 """Render the three pairwise heatmaps after the simulations have finished.
 
 For each pair (L x sigma, L x T, sigma x T) produces two panels:
-    Left:  observed Delta heatmap (viridis)
-    Right: Delta minus multiplicative-benchmark prediction (RdBu_r divergent)
+    Left:  observed Delta heatmap (YlGnBu)
+    Right: Delta minus multiplicative-benchmark prediction (RdBu divergent)
 
 Output:
     fig_heatmaps.png / fig_heatmaps.pdf  (3 rows x 2 cols)
@@ -75,7 +75,15 @@ def load_grid(pair: str, axis_a, axis_b, fmt_a, fmt_b):
 # -----------------------------------------------------------------------
 # Plot helpers
 # -----------------------------------------------------------------------
-def annotate(ax, mat, fmt='{:.2f}', size=8):
+def _text_color_for_value(value, cmap, norm):
+    if np.isnan(value):
+        return 'black'
+    r, g, b, _ = cmap(norm(value))
+    luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
+    return 'white' if luminance < 0.48 else 'black'
+
+
+def annotate(ax, mat, fmt='{:.2f}', size=8, cmap=None, norm=None):
     nrows, ncols = mat.shape
     for i in range(nrows):
         for j in range(ncols):
@@ -84,12 +92,22 @@ def annotate(ax, mat, fmt='{:.2f}', size=8):
                 txt = '--'
             else:
                 txt = fmt.format(v)
+            color = _text_color_for_value(v, cmap, norm) if cmap is not None and norm is not None else 'black'
             ax.text(j, i, txt, ha='center', va='center',
-                    fontsize=size, color='black')
+                    fontsize=size, color=color)
+
+
+def add_cell_grid(ax, nrows, ncols):
+    ax.set_xticks(np.arange(-0.5, ncols, 1), minor=True)
+    ax.set_yticks(np.arange(-0.5, nrows, 1), minor=True)
+    ax.grid(which='minor', color='white', linewidth=0.7, alpha=0.65)
+    ax.tick_params(which='minor', bottom=False, left=False)
 
 
 def heatmap_obs(ax, mat, row_labels, col_labels, row_name, col_name, title):
-    im = ax.imshow(mat, cmap='viridis', aspect='auto', vmin=-0.05, vmax=1.0)
+    cmap = plt.get_cmap('YlGnBu')
+    norm = mcolors.Normalize(vmin=-0.05, vmax=1.0)
+    im = ax.imshow(mat, cmap=cmap, aspect='auto', norm=norm)
     ax.set_xticks(range(len(col_labels)))
     ax.set_xticklabels(col_labels)
     ax.set_yticks(range(len(row_labels)))
@@ -97,7 +115,8 @@ def heatmap_obs(ax, mat, row_labels, col_labels, row_name, col_name, title):
     ax.set_xlabel(col_name)
     ax.set_ylabel(row_name)
     ax.set_title(title, fontsize=11)
-    annotate(ax, mat)
+    add_cell_grid(ax, mat.shape[0], mat.shape[1])
+    annotate(ax, mat, cmap=cmap, norm=norm)
     return im
 
 
@@ -109,7 +128,8 @@ def heatmap_dev(ax, dev_mat, row_labels, col_labels, row_name, col_name, title):
     else:
         vmax = max(0.05, np.nanmax(np.abs(finite)))
     norm = mcolors.TwoSlopeNorm(vmin=-vmax, vcenter=0.0, vmax=vmax)
-    im = ax.imshow(dev_mat, cmap='RdBu', aspect='auto', norm=norm)
+    cmap = plt.get_cmap('RdBu')
+    im = ax.imshow(dev_mat, cmap=cmap, aspect='auto', norm=norm)
     ax.set_xticks(range(len(col_labels)))
     ax.set_xticklabels(col_labels)
     ax.set_yticks(range(len(row_labels)))
@@ -117,7 +137,8 @@ def heatmap_dev(ax, dev_mat, row_labels, col_labels, row_name, col_name, title):
     ax.set_xlabel(col_name)
     ax.set_ylabel(row_name)
     ax.set_title(title, fontsize=11)
-    annotate(ax, dev_mat, fmt='{:+.2f}')
+    add_cell_grid(ax, dev_mat.shape[0], dev_mat.shape[1])
+    annotate(ax, dev_mat, fmt='{:+.2f}', cmap=cmap, norm=norm)
     return im
 
 

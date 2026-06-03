@@ -54,3 +54,18 @@ cmake-build-*/
 *~
 .DS_Store
 Thumbs.db
+
+# =============================================================
+# Public final thesis write-up
+# =============================================================
+!Thesis_writeup/
+!Thesis_writeup/main.tex
+!Thesis_writeup/references.bib
+!Thesis_writeup/main.pdf
+!Thesis_writeup/sections/
+!Thesis_writeup/sections/*.tex
+!Thesis_writeup/figures/
+!Thesis_writeup/figures/*.pdf
+!Thesis_writeup/figures/*.png
+!Thesis_writeup/figures/*.py
+!Code/ogcode/cpp conversion/build_frictions.bat

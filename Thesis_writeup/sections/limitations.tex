@@ -1,0 +1,12 @@
+\section{Limitations and next steps}
+\label{sec:limitations}
+
+The design of this thesis is deliberately controlled: it keeps the Calvano pricing environment fixed and varies only the information and timing frictions. That is the source of the main contribution, because it makes the interaction effects interpretable. It also sets the boundary of what the results can claim. The thesis identifies mechanisms inside a stylised Q-learning environment; it does not provide a market-by-market quantitative forecast.
+
+\begin{itemize}[topsep=2pt, itemsep=4pt]
+    \item \textbf{Asymmetric and heterogeneous frictions.} All three frictions are imposed symmetrically on the two agents. Real markets often feature asymmetric frictions, for example one firm with a faster price-update cadence, cleaner data feed, or stronger scraping infrastructure than the other. \citet{brown2023}'s empirical findings on asymmetric update frequencies make this the most natural next extension.
+    \item \textbf{A homogeneous two-firm product environment.} The model keeps the two firms symmetric in appeal and cost, with differentiation entering through the logit demand system. This is useful for isolating the learning mechanism, but it leaves out richer market structure: more firms, asymmetric costs, product-level heterogeneity, capacity constraints, and consumer search frictions.
+    \item \textbf{Bounded memory and richer algorithms.} Appendix~\ref{app:bounded-memory} explains why extending tabular Q-learning from one-period memory to two-period memory is computationally demanding in this state space. A meaningful extension would require either substantially larger compute, for example a high-performance-computing allocation, or a methodological switch to function-approximated $Q$. That step would also allow comparison with more modern pricing algorithms, but at the cost of giving up the transparent tabular mechanism used here.
+\end{itemize}
+
+These limitations do not undermine the main result. They point to where the mechanism should be stress-tested next: asymmetric firms, richer product environments, and learning rules with more memory. The central finding remains that information and timing frictions cannot be evaluated one at a time, because their combination can qualitatively change the degree of learned collusion.

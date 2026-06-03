@@ -4,7 +4,7 @@ Two outputs:
 
   fig_offpath_factorial.{png,pdf}
       2x4 grid of panels, one per factorial cell. Each panel shows the
-      mean Delta trajectory across the 30 playback periods, separately
+      mean Delta trajectory across the 100 playback periods, separately
       for the two deviation types (Low, BR), with the pre-shock steady
       state as a horizontal reference.
 
@@ -92,7 +92,7 @@ def make_factorial_figure():
             ax.legend(loc='lower right', fontsize=8)
 
     fig.suptitle(
-        'Off-path deviation test: $\\Delta$ trajectory over 30 periods after '
+        'Off-path deviation test: $\\Delta$ trajectory over 100 periods after '
         'a forced agent-1 deviation\n'
         'Two deviation types (Low = lowest grid price, BR = static-Bertrand best response). '
         'Retaliation looks like a temporary $\\Delta$ dip and recovery.',
@@ -126,7 +126,9 @@ def _retal_grid(pair_folder, row_vals, col_vals, fmt_r, fmt_c):
 def _heatmap(ax, mat, row_labels, col_labels, row_name, col_name, title):
     finite = mat[np.isfinite(mat)]
     vmax = max(0.05, np.nanmax(np.abs(finite))) if len(finite) else 0.3
-    im = ax.imshow(mat, cmap='YlOrRd', aspect='auto', vmin=0, vmax=vmax)
+    cmap = plt.get_cmap('YlOrRd')
+    norm = mcolors.Normalize(vmin=0, vmax=vmax)
+    im = ax.imshow(mat, cmap=cmap, aspect='auto', norm=norm)
     ax.set_xticks(range(len(col_labels)))
     ax.set_xticklabels(col_labels)
     ax.set_yticks(range(len(row_labels)))
@@ -134,11 +136,21 @@ def _heatmap(ax, mat, row_labels, col_labels, row_name, col_name, title):
     ax.set_xlabel(col_name)
     ax.set_ylabel(row_name)
     ax.set_title(title, fontsize=10)
+    ax.set_xticks(np.arange(-0.5, len(col_labels), 1), minor=True)
+    ax.set_yticks(np.arange(-0.5, len(row_labels), 1), minor=True)
+    ax.grid(which='minor', color='white', linewidth=0.7, alpha=0.65)
+    ax.tick_params(which='minor', bottom=False, left=False)
     for i in range(mat.shape[0]):
         for j in range(mat.shape[1]):
             v = mat[i, j]
             txt = '--' if np.isnan(v) else f'{v:.2f}'
-            ax.text(j, i, txt, ha='center', va='center', fontsize=8, color='black')
+            if np.isnan(v):
+                color = 'black'
+            else:
+                r, g, b, _ = cmap(norm(v))
+                luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b
+                color = 'white' if luminance < 0.48 else 'black'
+            ax.text(j, i, txt, ha='center', va='center', fontsize=8, color=color)
     return im
 
 
@@ -151,11 +163,11 @@ def make_retal_heatmap_figure():
     _heatmap(axes[0,0], low,
              [f'L={v}' for v in L_VALUES], [f'$\\sigma$={v}' for v in S_VALUES],
              'Latency $L$', 'Noise $\\sigma$',
-             'L x $\\sigma$: retaliation depth (Low deviation)')
+             'L x $\\sigma$: retaliation depth (Low)')
     _heatmap(axes[0,1], br,
              [f'L={v}' for v in L_VALUES], [f'$\\sigma$={v}' for v in S_VALUES],
              'Latency $L$', 'Noise $\\sigma$',
-             'L x $\\sigma$: retaliation depth (BR deviation)')
+             'L x $\\sigma$: retaliation depth (BR)')
 
     # Row 2: Latency x Async
     low, br = _retal_grid(HERE / 'LxT', L_VALUES, T_VALUES, fmt_L, fmt_T)

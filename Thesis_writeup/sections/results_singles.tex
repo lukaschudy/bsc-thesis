@@ -1,0 +1,76 @@
+\section{Single-friction results}
+\label{sec:results-singles}
+
+Each single friction sweep uses 250 sessions per cell. All sessions converged within the 1{,}000 episode cap. Table~\ref{tab:singles} reports $\Delta$ across the three sweeps. The three shapes that emerge are qualitatively distinct, mapping to three different mechanisms by which information or timing structure interferes with learned collusion.
+
+\begin{table}[H]
+\centering
+\caption{Single friction sweeps. SD is cross-session standard deviation. The $L=0$, $\sigma=0$, and $T=0$ cells all reproduce the baseline ($\Delta=0.843$) bit-for-bit, which is the internal sanity check.}
+\label{tab:singles}
+\begin{tabular}{rcc@{\hspace{0.75em}}|@{\hspace{0.75em}}rcc@{\hspace{0.75em}}|@{\hspace{0.75em}}rcc}
+\toprule
+\multicolumn{3}{c}{\textbf{Latency}} & \multicolumn{3}{c}{\textbf{Noise}} & \multicolumn{3}{c}{\textbf{Async}} \\
+$L$ & $\Delta$ & SD & $\sigma$ & $\Delta$ & SD & $T$ & $\Delta$ & SD \\
+\midrule
+0  & 0.843 & 0.114 & 0.0  & $\phantom{-}0.843$ & 0.114 & 0  & 0.843 & 0.114 \\
+1  & 0.280 & 0.196 & 0.5  & $\phantom{-}0.670$ & 0.226 & 1  & 0.378 & 0.108 \\
+2  & 0.215 & 0.110 & 1.0  & $\phantom{-}0.493$ & 0.290 & 2  & 0.418 & 0.095 \\
+3  & 0.193 & 0.102 & 2.0  & $\phantom{-}0.242$ & 0.262 & 5  & 0.424 & 0.116 \\
+5  & 0.174 & 0.086 & 3.0  & $\phantom{-}0.143$ & 0.218 & 10 & 0.411 & 0.108 \\
+10 & 0.158 & 0.085 & 5.0  & $\phantom{-}0.013$ & 0.064 & 20 & 0.403 & 0.119 \\
+20 & 0.155 & 0.085 & 10.0 & $-0.003$           & 0.073 &    &       &       \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\subsection{Latency: cliff plus floor}
+\label{sec:results-latency}
+
+A single period of delay ($L=0\to 1$) erases two-thirds of the collusion. From $L\geq 2$ onward $\Delta$ continues to fall but more slowly, settling around a residual of $\Delta\approx 0.16$ for $L\geq 5$ (Figure~\ref{fig:latency}). The cliff at $L=1$ reflects that the Calvano agents' policies condition on the rival's last-period price, and severing that link breaks reward, punishment, and conditioning at once. The residual at high $L$ is more interesting because it implies that some collusion is sustained without timely monitoring, presumably a mutual high price equilibrium that requires no enforcement. We will see in Section~\ref{sec:results-factorial} that this residual is destroyed when noise is added, which suggests the mechanism it represents requires the rival side observation to be at least correct (even if stale).
+
+This is consistent with the broader imperfect-monitoring literature in the sense that degrading rival information weakens learned collusion \citep{calvano2021,zhang2025}. The shape is different, however. Noisy monitoring corrupts the value of the rival signal and produces the smooth decline reported below. Latency leaves the rival price value correct but makes it arrive too late, producing a sharp one-period collapse followed by a residual floor. The comparison suggests that timeliness and accuracy are separate channels rather than interchangeable versions of the same information friction.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.68\linewidth]{figures/fig_latency.pdf}
+\caption{Effect of observation latency $L$ on collusion. The cliff at $L=1$ accounts for nearly the entire effect, and further latency adds little.}
+\label{fig:latency}
+\end{figure}
+
+\subsection{Noise: smooth decline to Nash}
+\label{sec:results-noise}
+
+$\Delta$ falls continuously from $0.843$ at $\sigma=0$ to indistinguishable from Nash by $\sigma=5$ (Figure~\ref{fig:noise}). Unlike latency there is no cliff and no residual floor. The mechanism is different. Noise corrupts the rival side state value rather than its arrival time. At high $\sigma$ the perceived state is close to independent of the rival's actual price, so any policy that conditions on that state encodes no rival relevant information. Both reactive and focal point coordination require the perceived state to contain rival-side information, and noise destroys both.
+
+To translate $\sigma$ into something concrete, the price grid has 15 slots spanning roughly the Nash to monopoly range, so one grid step corresponds to a few cents of price change in this parameterisation. $\sigma=1$ then means each agent's observation of the rival is off by about one slot (a few cents) per period, the kind of error you would get from a slightly out of date price feed or a scrape that misses the most recent change. $\sigma=2$ corresponds to two step errors, noticeable but not catastrophic. By $\sigma=5$ the noise standard deviation is comparable to half the grid range, the agent essentially cannot read the rival's price, and collusion collapses entirely.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.78\linewidth]{figures/fig_noise.pdf}
+\caption{Effect of noisy monitoring $\sigma$ on collusion. Smooth monotone decline reaching the Nash benchmark by $\sigma=5$, with no residual floor.}
+\label{fig:noise}
+\end{figure}
+
+\subsection{Async: step then plateau}
+\label{sec:results-async}
+
+Strict alternation cuts $\Delta$ in half from $T=0$ to $T=1$, then plateaus around $\Delta\approx 0.41$ for $T\geq 2$ (Figure~\ref{fig:async}). The drop seems structural. It depends on whether prices are simultaneous or staggered, not much on how staggered. The result is opposite to what naive Maskin--Tirole reasoning would predict, but consistent with a learning side story. Alternation halves each agent's effective state visitation rate within a fixed iteration budget, so the algorithm has more difficulty discovering the high price equilibria of the simultaneous baseline. A competing strategic explanation is that the equilibrium set of the alternating move game differs from that of the simultaneous one, and the equilibrium that Q-learners select happens to be lower. Distinguishing the two would require a longer horizon experiment.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.78\linewidth]{figures/fig_async.pdf}
+\caption{Effect of asynchronous lock in length $T$ on collusion. Step from baseline at $T=0$ to a plateau at $\Delta\approx 0.41$ for $T\geq 1$.}
+\label{fig:async}
+\end{figure}
+
+\subsection{Three shapes side by side}
+\label{sec:results-comparison}
+
+Figure~\ref{fig:three-friction} places the three sweeps on a shared $\Delta$ axis. The qualitative differences are visible at a glance, namely cliff, smooth decline, step then plateau.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.99\linewidth]{figures/fig_three_friction_comparison.pdf}
+\caption{Three frictions, three qualitatively different shapes. The single-friction sweeps interfere with three different parts of the learning machinery. Latency delays signals, noise corrupts them, and asynchrony restructures the game.}
+\label{fig:three-friction}
+\end{figure}

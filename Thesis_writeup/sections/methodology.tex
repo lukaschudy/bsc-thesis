@@ -1,0 +1,78 @@
+\section{Methodology}
+\label{sec:methodology}
+
+\subsection{Baseline}
+\label{sec:methodology-baseline}
+
+The baseline reproduces \citet{calvano2020}. Two firms ($n=2$) repeatedly choose prices for differentiated products. ``Bertrand'' here means that price is the strategic choice variable. ``Logit demand'' means that consumers are more likely to buy from the cheaper firm, but some consumers still prefer one product over the other because products are differentiated. The firms have homogeneous product appeal, $a_1=a_2=2$, horizontal differentiation $\mu=0.25$ (moderate but meaningful preference heterogeneity), and unit marginal costs.
+
+Prices are not continuous. Each firm chooses from the same fixed menu of $m=15$ prices in every period. Following \citet{calvano2020}, this menu is built around two familiar one-shot benchmarks: the competitive Bertrand-Nash price, where neither firm wants to change price unilaterally, and the joint-monopoly price, where total industry profit is maximised. For the baseline parameters these are approximately $p^{\mathrm{N}}=1.473$ and $p^{\mathrm{M}}=1.925$. The grid then runs from $1.428$ to $1.970$ in equal steps of about $0.039$, so both benchmarks lie inside the action set rather than at its boundary. The exact construction is given in Appendix~\ref{app:price-grid}.
+
+The economic basics $(a_0,a,c,\mu,\xi)$ and the derived grid are therefore fixed inputs to every session of every experiment in this thesis, not random draws. What is randomised across sessions is only the learning side of the simulation: the initial $Q$-table entries, the initial prices the agents start at, the pseudo-random stream driving exploration, and, in noise cells, the per-period Gaussian draws on the observed rival price.
+
+The agents have one-period memory. At time $t$, the state is the pair of prices chosen in the previous period, $s_t=(p_{1,t-1},p_{2,t-1})$. With 15 possible prices for each firm, there are $15^2=225$ possible states. Each agent stores a tabular $Q$-table. A row of this table is a state, a column is a possible action, and an action is a price-grid index $1,\dots,m$. The entry in the table is not itself a price. It is a real-valued score: the agent's current estimate of the discounted profit from choosing that price index in that state. Formally, agent $i$ stores $Q_i(s,a)$ for $s\in\mathcal{S}$ and $a\in\{1,\dots,m\}$, and updates it by the standard one-step rule
+\begin{equation}
+    Q_{i,t+1}(s_t, a_{i,t}) = (1-\alpha)\,Q_{i,t}(s_t,a_{i,t}) + \alpha\!\left[\pi_i(a_t) + \delta\,\max_{a'}Q_{i,t}(s_{t+1}, a')\right],
+    \label{eq:Q-update}
+\end{equation}
+with learning rate $\alpha=0.15$ and discount factor $\delta=0.95$. Action choice follows exponentially decaying $\varepsilon$-greedy exploration ($\beta=4\times 10^{-6}$): with probability $\varepsilon$ the agent experiments with a random price, and otherwise it chooses the price index with the highest current $Q$-score.
+
+Iterations are grouped into episodes of length 5{,}000 purely as a convergence checking interval. The $Q$-table, greedy policy, and $\varepsilon$ all carry over across episode boundaries, so a session is one continuous training run rather than a sequence of independent rollouts. Sessions are drawn with fresh random initial $Q$ and prices, run until the greedy strategy is unchanged for four consecutive episodes (or a 1{,}000 episode cap), and aggregated as the mean of session-level converged
+\[
+    \Delta = \frac{\bar\pi-\pi^{\mathrm{N}}}{\pi^{\mathrm{M}}-\pi^{\mathrm{N}}},
+\]
+where $\bar\pi$ is the average per-period profit at convergence, $\pi^{\mathrm{N}}$ the static-Bertrand Nash profit, and $\pi^{\mathrm{M}}$ the symmetric joint-monopoly profit. So $\Delta=0$ corresponds to fully competitive (Nash) prices, $\Delta=1$ to perfect (monopoly) collusion, and the headline Calvano result is that the agents converge on $\Delta\approx 0.84$. Cross-session standard deviation is reported alongside.
+
+\subsubsection*{Replication and grid robustness}
+
+The simulator is a from-scratch C++17 translation of the Calvano Fortran reference. Replication is verified at the session level. Running both binaries on the same baseline parameters with identical \texttt{Ran2} seeds, the aggregated outputs (\texttt{A\_res.txt} reporting $\Delta$ and the converged-strategy summary) agree byte for byte, and across 100 sessions of per-session metadata ($\sim 3{,}300$ numerical values) only four floating-point fields differ, each by exactly the printf rounding granularity of $0.01$. Both implementations report the same $\Delta = 0.84644$ to five decimals at this seed sequence. Running the C++ binary at the 1{,}000-session draw used elsewhere in the paper gives $\Delta = 0.848$ (cross-session SD $0.109$), within sampling noise of \citet{calvano2020}'s published representative value of approximately $0.84$.
+
+A grid-robustness check at $m\in\{15,25,50,100\}$ confirms the baseline is not an artefact of the coarse 15-point grid. $\Delta$ falls modestly with finer grids and asymptotes by $m\sim 50$ at $\Delta\approx 0.71$ (Figure~\ref{fig:grid-robustness}). The remaining experiments stay at $m=15$ to keep state-space size and runtime tractable while still being representative of the full-grid behaviour.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.78\linewidth]{figures/fig_grid_robustness.pdf}
+\caption{Grid-robustness check at $m\in\{15,25,50,100\}$ (baseline parameters, no frictions). Error bars show cross-session standard deviation. $\Delta$ flattens between $m=50$ and $m=100$, suggesting the baseline result is not a coarse-grid artefact.}
+\label{fig:grid-robustness}
+\end{figure}
+
+\subsection{Three frictions}
+\label{sec:methodology-frictions}
+
+Each of the three frictions modifies only the information or timing structure facing the agents. The game itself, the action set, and the learning rule are unchanged from the baseline. Setting any friction to its null value reproduces the baseline bit-for-bit, an internal sanity check designed in by construction.
+
+\paragraph{Latency $L$.}
+Agent $i$ at time $t$ observes the rival's price from period $t-1-L$ rather than $t-1$. The agent's perceived state is $\tilde s^{(i)}_t = (p_{i,t-1}, p_{j,t-1-L})$, which differs across agents whenever $L\geq 1$. Profits use the true joint action, so only the agent's view of the rival is degraded. A price-history buffer is a short stored list of each agent's past prices. Under latency $L$, a per-agent buffer of length $L+1$ is used to retrieve the rival price from $L$ periods ago; it is initialised by repeating the agent's drawn initial price.
+
+The real-world analogue is staleness in cross-firm price observation. Airline ticketing systems propagate fare changes through booking channels and global distribution systems with non-trivial lags. A competitor who lowers fares at 9am may not be visible to you until your scraping or distribution system update at noon. Subscription platform competitors observe each other through monthly catalogue refreshes. The friction parameter $L$ asks how much delay rivals can tolerate before learned coordination breaks.
+
+\paragraph{Noise $\sigma$.}
+Each agent observes the rival's last-period price corrupted by an independent Gaussian draw on the price index:
+\begin{equation}
+    \tilde p^{(i)}_{j,t-1} \;=\; \mathrm{clamp}\!\left(\,\mathrm{round}\!\left(k_{j,t-1} + \sigma\,\varepsilon^{(i)}_t\right),\; 1,\; m\right),\qquad \varepsilon^{(i)}_t\sim\mathcal N(0,1).
+    \label{eq:noise}
+\end{equation}
+Here $k_{j,t-1}$ is the rival's true price index in the previous period. The Gaussian draw first perturbs that index, rounding maps the perturbed value back to an integer grid index, and clamping ensures that the observed index remains inside the feasible range $1,\dots,m$. For example, an observation rounded below 1 is recorded as 1, and an observation rounded above 15 is recorded as 15. Noise is drawn fresh each period and independently for each agent. Profits are always computed from the true prices, so noise affects only what the learner observes, not the payoff function.
+
+The real-world analogue is data quality friction in cross-firm price intelligence. Firms typically do not observe each other's prices directly. They scrape from competitor websites, buy data feeds, or estimate from indirect signals, and each of these channels introduces noise. \citet{zhang2025} interprets the same kind of friction as a policy lever, since a regulator could in principle mandate that published prices be reported with bounded noise on the theory that algorithmic collusion fragile to noise can be disrupted by adding it.
+
+\paragraph{Async $T$.}
+At iteration $t$, the moving agent's identity depends on the lock-in length:
+\begin{itemize}[topsep=2pt, itemsep=2pt, leftmargin=*]
+    \item if $T = 0$, both agents move every period (the simultaneous Bertrand baseline),
+    \item if $T \geq 1$, $\mathrm{mover}(t) \;=\; (\lfloor (t-1)/T\rfloor \bmod 2) + 1$, with the non-mover holding its previous price.
+\end{itemize}
+So $T=1$ is strict alternation (Maskin--Tirole, where agent~1 moves on odd $t$ and agent~2 on even $t$) and $T\geq 2$ is $T$-period lock-in, where each agent owns the right to revise its price for $T$ consecutive periods, then the other agent takes over. Both agents $Q$-update each period regardless of who actually moved. The non-mover's action for the period is to repeat its previous price, which is a valid element of its action set, and the rewards both agents observe from the realised joint action are legitimate learning signals.
+
+The real-world example here is asymmetric pricing cadence. \citet{brown2023} document that online retailers update prices at sharply asymmetric frequencies (hourly, daily, and weekly) and show theoretically and in a calibrated counterfactual that this asymmetry sustains prices above the Bertrand-Nash benchmark, with the slower firms charging the higher prices. The mechanism is that the slow firm is effectively committed to its posted price between updates, and the fast firm's algorithm best responds to that posted price rather than undercutting aggressively. In the present model, lock-in may therefore reduce part of the coordination problem: when one firm cannot revise its price, the other firm responds to a known current target rather than to a rival that may change price at the same moment. This mechanism matters again in the combined-friction experiments, where timing structure can partly offset degraded information.
+
+\subsection{Combined frictions and the combination design}
+\label{sec:methodology-combined}
+
+A unified learner takes $(L,\sigma,T)$ jointly. Inside each period it (i) computes each agent's perceived state, using the delayed rival-price observation and adding fresh noise when $\sigma>0$, (ii) determines which agent is allowed to move under $T$-period lock-in, with the non-mover repeating its previous price, (iii) lets the mover choose a price index by $\varepsilon$-greedy exploration on its perceived state, (iv) computes profits from the true joint prices, (v) updates both agents' $Q$-tables using their own perceived states, and (vi) advances the price-history buffers and the exploration parameter $\varepsilon$. At all-zero inputs the unified learner reproduces the baseline. At single-friction corners (e.g.\ $L=2$, $\sigma=0$, $T=0$) it reproduces the corresponding single-friction implementation to numerical precision, which is the built-in cross-validation.
+
+\paragraph{Combination design.} The main interaction experiment uses all eight combinations of the three frictions. Each friction has an "off" level (the null value) and an "on" level (a moderate, non-saturating value):
+\begin{equation*}
+    L\in\{0,2\},\qquad \sigma\in\{0,1\},\qquad T\in\{0,1\}.
+\end{equation*}
+The eight cells are labelled $\texttt{F}abc$ where each digit indicates whether the corresponding friction is on. So \texttt{F000} is the baseline, \texttt{F100} is "latency only", \texttt{F011} is "noise plus async, no latency", and \texttt{F111} is "all three on". The on-levels are taken from the single-friction experiments reported in Section~\ref{sec:results-singles}. They were chosen to make each individual friction visible without pushing the outcome all the way to the competitive benchmark. In those single-friction cells, the collusion score is $\Delta=0.215$ for latency at $L=2$, $\Delta=0.493$ for noise at $\sigma=1$, and $\Delta=0.378$ for asynchrony at $T=1$, compared with the baseline value $\Delta=0.843$. These values are low enough to show that each friction matters, but high enough that joint effects can still be detected. Each cell is run at $N\in\{250,500,1000\}$ sessions to confirm that the interaction patterns are not artefacts of sampling noise.
