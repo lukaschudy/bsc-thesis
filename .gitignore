@@ -49,6 +49,7 @@ cmake-build-*/
 # Editor / OS clutter
 # =============================================================
 .vscode/
+.claude/
 .idea/
 *.swp
 *~
